@@ -1,0 +1,20 @@
+1.00  finally fixed warnings problem with Leon Brocard's help
+      added bind parameters with arrayref being passsed to sql
+      added documentation of how to use with SQL::Abstract
+
+0.06  allowed test without 'tests' to just check for existance
+      of rows
+
+0.05  added Test::Warn based tests
+
+0.04  verbose mode added
+      WHERE 1 = 1 removed due to Richard Clamp's nagging
+
+0.03  NULL behavior added
+      Proper error messages for missing columns
+      check die on problem with the SQL
+
+0.02  Documentation typos patched by Kate L Pugh
+
+0.01  Inital Release
+      
