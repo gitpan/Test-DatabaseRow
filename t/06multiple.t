@@ -42,8 +42,8 @@ test_test("right number, max");
 test_out("not ok 1 - matches");
 test_fail(+4);
 test_diag("Got the wrong number of rows back from the database.");
-test_diag("  got:      '2' rows back");
-test_diag("  expected: '3' rows back");
+test_diag("  got:      2 rows back");
+test_diag("  expected: 3 rows back");
 row_ok(table   => "dummy",
        where   => [ dummy => "dummy" ],
        results => 3,
@@ -53,8 +53,8 @@ test_test("wrong number");
 test_out("not ok 1 - matches");
 test_fail(+4);
 test_diag("Got too few rows back from the database.");
-test_diag("  got:      '2' rows back");
-test_diag("  expected: '3' rows or more back");
+test_diag("  got:      2 rows back");
+test_diag("  expected: 3 rows or more back");
 row_ok(table   => "dummy",
        where   => [ dummy => "dummy" ],
        min_results => 3,
@@ -64,8 +64,8 @@ test_test("wrong number, min");
 test_out("not ok 1 - matches");
 test_fail(+4);
 test_diag("Got too many rows back from the database.");
-test_diag("  got:      '2' rows back");
-test_diag("  expected: '3' rows or less back");
+test_diag("  got:      2 rows back");
+test_diag("  expected: 1 rows or fewer back");
 row_ok(table   => "dummy",
        where   => [ dummy => "dummy" ],
        max_results => 1,

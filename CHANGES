@@ -1,3 +1,9 @@
+1.02  Added Build.PL to the MANIFEST (oops)
+      Patches from Andy Lester to mean:
+      Fixed docs on not_row_ok.
+      results, max_results and min_results now show the actual
+      incorrect values, instead of hardcoded leftovers.
+
 1.01  added negative assertions, due to request from pudge and
       Andy reminding me about it.
 

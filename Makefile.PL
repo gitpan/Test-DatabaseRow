@@ -1,7 +1,7 @@
     use ExtUtils::MakeMaker;
     WriteMakefile
       ('DISTNAME' => 'Test-DatabaseRow',
-       'VERSION' => '1.01',
+       'VERSION' => '1.02',
        'PL_FILES' => {},
        'PREREQ_PM' => {
 			'Test::Builder' => '0.15',

@@ -12,7 +12,7 @@ require Exporter;
 @EXPORT = qw(row_ok not_row_ok);
 
 # set the version number
-$VERSION = "1.01";
+$VERSION = "1.02";
 
 # okay, try loading Regexp::Common
 eval { require Regexp::Common; Regexp::Common->import };
@@ -248,7 +248,7 @@ for negative assertions about the database.
          results => 0 );
 
   # convience function that does the same thing
-  no_row_ok(sql => "SELECT * FROM contacts WHERE name = 'Trelane'")
+  not_row_ok(sql => "SELECT * FROM contacts WHERE name = 'Trelane'")
 
 =item min_results / max_results
 
@@ -295,11 +295,12 @@ sub row_ok
   # re-throw errors from our caller's perspective
   if ($@) { croak $@ }
 
+  my $nrows = @data;
   # fail the test if we're running just one test and no matching row was returned
   if(!defined($args{min_results}) &&
      !defined($args{max_results}) &&
      !defined($args{results}) &&
-     @data == 0)
+     $nrows == 0)
   {
     Test::Builder::DatabaseRow->ok(0,$args{label} || "simple db test");
     Test::Builder::DatabaseRow->diag("No matching row returned");
@@ -308,34 +309,34 @@ sub row_ok
   }
 
   # check we got the exected number of rows back if they specified exactly
-  if(defined($args{results}) && @data != $args{results})
+  if(defined($args{results}) && $nrows != $args{results})
   {
     Test::Builder::DatabaseRow->ok(0,$args{label} || "simple db test");
-    Test::Builder::DatabaseRow->diag("Got the wrong number of rows back from the database.\n");
-    Test::Builder::DatabaseRow->diag("  got:      '2' rows back");
-    Test::Builder::DatabaseRow->diag("  expected: '3' rows back");
+    Test::Builder::DatabaseRow->diag("Got the wrong number of rows back from the database.");
+    Test::Builder::DatabaseRow->diag("  got:      $nrows rows back");
+    Test::Builder::DatabaseRow->diag("  expected: $args{results} rows back");
     _sql_diag(%args);
     return 0;
   }
 
   # check we got enough matching rows back
-  if(defined($args{min_results}) && @data < $args{min_results})
+  if(defined($args{min_results}) && $nrows < $args{min_results})
   {
     Test::Builder::DatabaseRow->ok(0,$args{label} || "simple db test");
-    Test::Builder::DatabaseRow->diag("Got too few rows back from the database.\n");
-    Test::Builder::DatabaseRow->diag("  got:      '2' rows back\n");
-    Test::Builder::DatabaseRow->diag("  expected: '3' rows or more back\n");
+    Test::Builder::DatabaseRow->diag("Got too few rows back from the database.");
+    Test::Builder::DatabaseRow->diag("  got:      $nrows rows back");
+    Test::Builder::DatabaseRow->diag("  expected: $args{min_results} rows or more back");
     _sql_diag(%args);
     return 0;
   }
 
-  # check we got didn't get too many enough matching rows back
-  if(defined($args{max_results}) && @data > $args{max_results})
+  # check we got didn't get too many matching rows back
+  if(defined($args{max_results}) && $nrows > $args{max_results})
   {
     Test::Builder::DatabaseRow->ok(0,$args{label} || "simple db test");
-    Test::Builder::DatabaseRow->diag("Got too many rows back from the database.\n");
-    Test::Builder::DatabaseRow->diag("  got:      '2' rows back\n");
-    Test::Builder::DatabaseRow->diag("  expected: '3' rows or less back\n");
+    Test::Builder::DatabaseRow->diag("Got too many rows back from the database.");
+    Test::Builder::DatabaseRow->diag("  got:      $nrows rows back");
+    Test::Builder::DatabaseRow->diag("  expected: $args{max_results} rows or fewer back");
     _sql_diag(%args);
     return 0;
   }
@@ -619,7 +620,7 @@ you I<really> need to not pass a C<sql> or C<where> argument, do C<< where
 =head1 AUTHOR
 
 Written by Mark Fowler L<gt>mark@twoshortplanks.comE<gt>.  Copyright
-Profero 2003.
+Profero 2003, 2004.
 
 Some code taken from B<Test::Builder>, written by Michael Schwern.
 Some code taken from B<Regexp::Common>, written by Damian Conway.  Neither

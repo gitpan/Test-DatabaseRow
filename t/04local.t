@@ -15,7 +15,7 @@ BEGIN
     require Sys::Hostname;
     Sys::Hostname->import;
 
-    unless (hostname() eq "friedegg")
+    unless (hostname() eq "uk-wrk-0017")
     {
       print $skiptext;
       exit;

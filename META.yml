@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name: Test-DatabaseRow
-version: 1.01
+version: 1.02
 license: perl
 distribution_type: module
 requires:
@@ -13,8 +13,8 @@ conflicts: {}
 provides:
   Test::Builder::DatabaseRow:
     file: lib/Test/DatabaseRow.pm
-    version: 1.01
+    version: 1.02
   Test::DatabaseRow:
     file: lib/Test/DatabaseRow.pm
-    version: 1.01
+    version: 1.02
 generated_by: Module::Build version 0.18_02
