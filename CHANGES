@@ -1,3 +1,6 @@
+1.04  added utf8 hack to allow data from the database to be
+      marked as utf8 before it's compared to anything
+
 1.03  added the ability to get at the results after you've run
       row_ok
 

@@ -3,7 +3,7 @@ package Test::DatabaseRow;
 use strict;
 use warnings;
 
-use vars qw($VERSION @EXPORT @ISA %RE);
+use vars qw($VERSION @EXPORT @ISA %RE $force_utf8);
 use Carp;
 
 # set row_ok to be exported
@@ -12,7 +12,7 @@ require Exporter;
 @EXPORT = qw(row_ok not_row_ok);
 
 # set the version number
-$VERSION = "1.03";
+$VERSION = "1.04";
 
 # okay, try loading Regexp::Common
 eval { require Regexp::Common; Regexp::Common->import };
@@ -41,7 +41,7 @@ Test::DatabaseRow - simple database tests
  use Test::DatabaseRow;
 
  # set the default database handle
- $Test::DatabaseRow::dbh = $dbh;
+ local $Test::DatabaseRow::dbh = $dbh;
 
  # sql based test
  row_ok( sql   => "SELECT * FROM contacts WHERE cid = '123'",
@@ -301,6 +301,11 @@ sub row_ok
   $args{dbh} ||= $Test::DatabaseRow::dbh
     or croak "No dbh passed and no default dbh set";
 
+  # do we need to load the Encode module?  Don't do this
+  # unless we really have to
+  if (($args{force_utf8} || $force_utf8) && !$INC{"Encode.pm"})
+    { eval "use Encode" }
+
   my @data;
   eval
   {
@@ -316,8 +321,17 @@ sub row_ok
     # store the results
     while (1)
     {
+      # get the data from the database
       my $data = $sth->fetchrow_hashref;
+
+      # we done here?  No more data in database
       last unless defined $data;
+
+      # munge the utf8 flag if we need to
+      if ($args{force_utf8} || $force_utf8)
+        { Encode::_utf8_on($_) foreach values %{ $data } }
+
+      # store the data
       push @data, $data;
     }
 
@@ -677,6 +691,53 @@ complex select statements that can easily be 'tied in' to C<row_ok>:
          tests => [ email => 'mark@twoshortplanks.com' ],
          label => "check mark's email address");
 
+=head2 utf8 hacks
+
+Often, you may store data utf8 data in your database.  However, many
+modern databases still do not store the metadata to indicate the data
+stored in them is utf8 and thier DBD drivers may not set the utf8 flag
+on values returned to Perl.  This means that data returned to Perl
+will be treated as if it is encoded in your normal charecter set
+rather than being encoded in utf8 and when compared to a byte for
+byte an identical utf8 string may fail comparison.
+
+    # this will fail incorrectly on data coming back from
+    # mysql since the utf8 flags won't be set on returning data
+    use utf8;
+    row_ok(sql   => $sql,
+           tests => [ name => "Napol\x{e9}on" ]);
+
+The solution to this is to use C<Encode::_utf_on($value)> on each
+value returned from the database, something you will have to do
+yourself in your application code.  To get this module to do this for
+you you can either pass the C<force_utf8> flag to C<row_ok>.
+
+    use utf8;
+    row_ok(sql        => $sql,
+           tests      => [ name => "Napol\x{e9}on" ],
+           force_utf8 => 1);
+
+Or set the global C<$Test::DatabaseRow::force_utf8> variable
+
+   use utf8;
+   local $Test::DatabaseRow::force_utf8 = 1;
+   row_ok(sql        => $sql,
+          tests      => [ name => "Napol\x{e9}on" ]);
+
+Please note that in the above examples with C<use utf8> enabled I
+could have typed unicode eacutes into the string directly rather than
+using the C<\x{e9}> escape sequence, but alas the pod renderer you're
+using to view this documentation would have been unlikely to render
+those examples correctly, so I didn't.
+
+Please also note that if you want the debug information that this
+module creates to be redered to STDERR correctly for your utf8
+terminal then you may need to stick
+
+   binmode STDERR, ":utf8";
+
+At the top of your script.
+
 =head1 BUGS
 
 You I<must> pass a C<sql> or C<where> argument to limit what is
@@ -695,6 +756,12 @@ Passing shared variables (variables shared between multiple threads
 with B<threads::shared>) in with C<store_row> and C<store_rows> and
 then changing them while C<row_ok> is still executing is just asking
 for trouble.
+
+The utf8 stuff only really works with perl 5.8 and later.  It just
+goes horribly wrong on earlier perls.  There's nothing I can do to
+correct that.  Also, no matter what version of Perl you're running,
+currently no way provided by this module to force the utf8 flag to be
+turned on for some fields and not on for others.
 
 =head1 AUTHOR
 

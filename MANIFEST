@@ -11,4 +11,5 @@ t/04local.t
 t/05warn.t
 t/06multiple.t
 t/07results.t
+t/08utf8.t
 META.yml
