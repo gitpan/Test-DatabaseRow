@@ -245,6 +245,12 @@ sub fetchrow_hashref
   my $this = shift;
   my $parent = $this->{parent};
 
+  # return undef after the first call)
+  if ($this->{called})
+    { return undef }
+  else
+    { $this->{called} = 1 }
+
   return
     ($parent->nomatch)
      ?  undef

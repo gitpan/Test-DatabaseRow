@@ -1,0 +1,20 @@
+--- #YAML:1.0
+name: Test-DatabaseRow
+version: 1.01
+license: perl
+distribution_type: module
+requires:
+  DBI: 0
+  Test::Builder: 0.15
+recommends: {}
+build_requires:
+  Test::Builder::Tester: 0.09
+conflicts: {}
+provides:
+  Test::Builder::DatabaseRow:
+    file: lib/Test/DatabaseRow.pm
+    version: 1.01
+  Test::DatabaseRow:
+    file: lib/Test/DatabaseRow.pm
+    version: 1.01
+generated_by: Module::Build version 0.18_02

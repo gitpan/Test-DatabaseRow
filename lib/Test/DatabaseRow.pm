@@ -9,10 +9,10 @@ use Carp;
 # set row_ok to be exported
 require Exporter;
 @ISA = qw(Exporter);
-@EXPORT = qw(row_ok);
+@EXPORT = qw(row_ok not_row_ok);
 
 # set the version number
-$VERSION = "1.00";
+$VERSION = "1.01";
 
 # okay, try loading Regexp::Common
 eval { require Regexp::Common; Regexp::Common->import };
@@ -75,11 +75,11 @@ details in a table or not.  For more advanced testing (joins, etc) it's
 probably easier for you to roll your own tests by hand than use this
 module.
 
-Exports one (and only one) test function, C<row_ok>.  This tests if the
-first selected row compares to the passed specification.
+Exports one test function C<row_ok>.  This tests if the first selected
+row compares to the passed specification.
 
-The C<row_ok> takes named attributes that control which row in which
-table it selects, and what tests are carried out on that row.
+The C<row_ok> takes named attributes that control which rows in which
+table it selects, and what tests are carried out on those rows.
 
 =over 4
 
@@ -91,7 +91,7 @@ in the C<$Test::DatabaseRow::dbh> global variable.
 
 =item sql
 
-The sql to select the row you want to check.  Some people may prefer
+The sql to select the rows you want to check.  Some people may prefer
 to use the C<table> and C<where> arguments (see below) to have the
 function build their SQL dynamically for them.  This can either be
 just a plain string, or it can be an array ref of which the first
@@ -225,6 +225,39 @@ C<TEST_DBROW_VERBOSE> environmental variable to a true value.
 
 =back
 
+=head2 Checking the number of results
+
+By default C<row_ok> just checks the first row returned from the
+database matches the criteria passed.  By setting the parameters below
+you can also cause the module to check that the correct number of rows
+are returned from by the select statment (though only the first row
+will be tested against the test conditions.)
+
+=over 4
+
+=item results
+
+Setting this parameter causes the test to ensure that the database
+returns exactly this number of rows when the select statement is
+executed.  Setting this to zero allows you to ensure that no matching
+rows were found by the database, hence this parameter can be used
+for negative assertions about the database.
+
+  # assert that Trelane is _not_ in the database
+  row_ok(sql     => "SELECT * FROM contacts WHERE name = 'Trelane'",
+         results => 0 );
+
+  # convience function that does the same thing
+  no_row_ok(sql => "SELECT * FROM contacts WHERE name = 'Trelane'")
+
+=item min_results / max_results
+
+This parameter allows you to test that the database returns
+at least or no more than the passed number of rows when the select
+statement is executed.
+
+=back
+
 =cut
 
 sub row_ok
@@ -235,7 +268,7 @@ sub row_ok
   $args{dbh} ||= $Test::DatabaseRow::dbh
     or croak "No dbh passed and no default dbh set";
 
-  my $data;
+  my @data;
   eval
   {
     # all problems with the database are fatal
@@ -248,7 +281,12 @@ sub row_ok
     $sth->execute(@{ $args{sqlb} });
 
     # store the results
-    $data = $sth->fetchrow_hashref;
+    while (1)
+    {
+      my $data = $sth->fetchrow_hashref;
+      last unless defined $data;
+      push @data, $data;
+    }
 
     # retore the original error handling
     $args{dbh}{RaiseError} = $old;
@@ -257,11 +295,47 @@ sub row_ok
   # re-throw errors from our caller's perspective
   if ($@) { croak $@ }
 
-  # fail the test if no matching row was returned
-  if (!defined($data))
+  # fail the test if we're running just one test and no matching row was returned
+  if(!defined($args{min_results}) &&
+     !defined($args{max_results}) &&
+     !defined($args{results}) &&
+     @data == 0)
   {
     Test::Builder::DatabaseRow->ok(0,$args{label} || "simple db test");
     Test::Builder::DatabaseRow->diag("No matching row returned");
+    _sql_diag(%args);
+    return 0;
+  }
+
+  # check we got the exected number of rows back if they specified exactly
+  if(defined($args{results}) && @data != $args{results})
+  {
+    Test::Builder::DatabaseRow->ok(0,$args{label} || "simple db test");
+    Test::Builder::DatabaseRow->diag("Got the wrong number of rows back from the database.\n");
+    Test::Builder::DatabaseRow->diag("  got:      '2' rows back");
+    Test::Builder::DatabaseRow->diag("  expected: '3' rows back");
+    _sql_diag(%args);
+    return 0;
+  }
+
+  # check we got enough matching rows back
+  if(defined($args{min_results}) && @data < $args{min_results})
+  {
+    Test::Builder::DatabaseRow->ok(0,$args{label} || "simple db test");
+    Test::Builder::DatabaseRow->diag("Got too few rows back from the database.\n");
+    Test::Builder::DatabaseRow->diag("  got:      '2' rows back\n");
+    Test::Builder::DatabaseRow->diag("  expected: '3' rows or more back\n");
+    _sql_diag(%args);
+    return 0;
+  }
+
+  # check we got didn't get too many enough matching rows back
+  if(defined($args{max_results}) && @data > $args{max_results})
+  {
+    Test::Builder::DatabaseRow->ok(0,$args{label} || "simple db test");
+    Test::Builder::DatabaseRow->diag("Got too many rows back from the database.\n");
+    Test::Builder::DatabaseRow->diag("  got:      '2' rows back\n");
+    Test::Builder::DatabaseRow->diag("  expected: '3' rows or less back\n");
     _sql_diag(%args);
     return 0;
   }
@@ -278,6 +352,9 @@ sub row_ok
   # check we've got a hash
   unless (ref($tests) eq "HASH")
     { croak "Can't understand the argument passed in 'tests'" }
+
+  # pull the first line off the data list
+  my $data = shift @data;
 
   # now for each test
   foreach my $oper (sort keys %$tests)
@@ -495,7 +572,13 @@ sub _sql_diag
   Test::Builder::DatabaseRow->diag("on database '$args{dbh}{Name}'");
 }
 
-=head1 OTHER SQL MODULES
+sub not_row_ok
+{
+  local $Test::Builder::Level = $Test::Builder::Level + 1;
+  row_ok(@_, results => 0);
+}
+
+=head2 Other SQL modules
 
 The SQL creation routines that are part of this module are designed
 primarily with the concept of getting simple single rows out of the

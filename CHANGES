@@ -1,3 +1,6 @@
+1.01  added negative assertions, due to request from pudge and
+      Andy reminding me about it.
+
 1.00  finally fixed warnings problem with Leon Brocard's help
       added bind parameters with arrayref being passsed to sql
       added documentation of how to use with SQL::Abstract
