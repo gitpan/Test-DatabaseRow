@@ -10,4 +10,5 @@ t/03tests.t
 t/04local.t
 t/05warn.t
 t/06multiple.t
+t/07results.t
 META.yml

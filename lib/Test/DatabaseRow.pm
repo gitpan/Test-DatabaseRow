@@ -12,7 +12,7 @@ require Exporter;
 @EXPORT = qw(row_ok not_row_ok);
 
 # set the version number
-$VERSION = "1.02";
+$VERSION = "1.03";
 
 # okay, try loading Regexp::Common
 eval { require Regexp::Common; Regexp::Common->import };
@@ -56,7 +56,6 @@ Test::DatabaseRow - simple database tests
 
  # complex test
  row_ok( table => "contacts",
-
          where => { '='    => { name   => "trelane"            },
                     'like' => { url    => '%shortplanks.com'   },},
 
@@ -223,6 +222,40 @@ be printed out during any failing tests.  You may also enable this
 feature by setting either C<$Test::DatabaseRow::verbose> variable the
 C<TEST_DBROW_VERBOSE> environmental variable to a true value.
 
+=item store_rows
+
+Sometimes, it's not enough to just use the simple tests that
+B<Test::DatabaseRow> offers you.  In this situation you can use the
+C<store_rows> function to get at the results that row_ok has extacted
+from the database.  You should pass a reference to an array for the
+results to be stored in;  After the call to C<row_ok> this array
+will be populated with one hashref per row returned from the database,
+keyed by column names.
+
+  row_ok(sql => "SELECT * FROM contact WHERE name = 'Trelane'",
+         store_rows => \@rows);
+
+  ok(Email::Valid->address($rows[0]{'email'}));
+
+=item store_row
+
+The same as C<store_rows>, but only the stores the first row returned
+in the variable.  Instead of passing in an array reference you should
+pass in either a reference to a hash...
+
+  row_ok(sql => "SELECT * FROM contact WHERE name = 'Trelane'",
+         store_rows => \%row);
+
+  ok(Email::Valid->address($row{'email'}));
+
+...or a reference to a scalar which should be populated with a
+hashref...
+
+  row_ok(sql => "SELECT * FROM contact WHERE name = 'Trelane'",
+         store_rows => \$row);
+
+  ok(Email::Valid->address($row->{'email'}));
+
 =back
 
 =head2 Checking the number of results
@@ -294,6 +327,42 @@ sub row_ok
 
   # re-throw errors from our caller's perspective
   if ($@) { croak $@ }
+
+  # store the results in the passed data structure if there is
+  # one.  We can use the actual data structures as control won't
+  # return to the end of the routine.  In theory some really weird
+  # stuff could happen if this was a a shared variable between
+  # multiple threads, but let's just hope nothing does that.
+
+  if ($args{store_rows})
+  {
+    croak "Must pass an arrayref in 'store_rows'"
+      unless ref($args{store_rows}) eq "ARRAY";
+    @{ $args{store_rows} } = @data;
+  }
+
+  if ($args{store_row})
+  {
+    if (ref($args{store_row}) eq "HASH")
+      { %{ $args{store_row} } = %{ $data[0] } }
+    else
+    {
+      eval
+      {
+	${ $args{store_row} } = $data[0];
+      };
+
+      if ($@)
+      {
+	if ($@ =~ /Not a SCALAR reference/)
+          { croak "Must pass a scalar or hash reference with 'store_row'" }
+        else
+	  { die $@ }
+      }
+    }
+  }
+
+  # perform tests on the data
 
   my $nrows = @data;
   # fail the test if we're running just one test and no matching row was returned
@@ -616,6 +685,16 @@ unlikely (and it's much more likely that you've written a bug in your
 test script) that omitting both of these is treated as an error.  If
 you I<really> need to not pass a C<sql> or C<where> argument, do C<< where
 => [ 1 => 1 ] >>.
+
+We currently only test the first line returned from the database.
+This probably could do with rewriting so we test all of them.  The
+testing of this data is the easy bit; Printing out useful diagnostic
+infomation is hard.  Patches welcome.
+
+Passing shared variables (variables shared between multiple threads
+with B<threads::shared>) in with C<store_row> and C<store_rows> and
+then changing them while C<row_ok> is still executing is just asking
+for trouble.
 
 =head1 AUTHOR
 
