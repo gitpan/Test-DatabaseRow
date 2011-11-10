@@ -7,7 +7,7 @@ use 5.006;
 use strict;
 use warnings;
 
-our $VERSION = "2.00";
+our $VERSION = "2.01";
 
 use Scalar::Util qw(blessed);
 use Carp qw(croak);
@@ -185,13 +185,14 @@ sub _build_db_results {
   }
 
   # get the SQL and execute it
-  my ($sql, @bind) = $self->sql_and_bind;
+  my ($sql, @bind) = @{ $self->sql_and_bind };
   my $sth = $self->dbh->prepare($sql);
   $sth->execute( @bind );
 
   # store the results
   my @db_results;
-  while (my ($row_data) = $sth->fetchrow_hashref) {
+  while (my $row_data = $sth->fetchrow_hashref) {
+
     # munge the utf8 flag if we need to
     if ($self->force_utf8)
       { Encode::_utf8_on($_) foreach values %{ $row_data } }
@@ -726,7 +727,7 @@ the CPAN RT system:
 L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Test-DatabaseRow>
 
 Alternatively, you can simply fork this project on github and
-send me pull requests.  Please see <http://github.com/2shortplanks/Test-DataabseRow>
+send me pull requests.  Please see <http://github.com/2shortplanks/Test-DatabaseRow>
 
 =head1 AUTHOR
 

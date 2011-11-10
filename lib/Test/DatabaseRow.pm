@@ -15,7 +15,7 @@ use Carp qw(croak);
 our @CARP_OK = qw(Test::DatbaseRow TestDatabaseRow::Object);
 
 # set the version number
-our $VERSION = "2.00";
+our $VERSION = "2.01";
 
 use Test::DatabaseRow::Object;
 our $class = "Test::DatabaseRow::Object";
@@ -552,7 +552,7 @@ RT system:
 L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Test-DatabaseRow>
 
 Alternatively, you can simply fork this project on github and
-send me pull requests.  Please see <http://github.com/2shortplanks/Test-DataabseRow>
+send me pull requests.  Please see <http://github.com/2shortplanks/Test-DatabaseRow>
 
 =head1 AUTHOR
 
