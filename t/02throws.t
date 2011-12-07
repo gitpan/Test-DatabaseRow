@@ -13,7 +13,7 @@ BEGIN
   }
 }
 
-use Test::More tests => 16;
+use Test::More tests => 17;
 use Test::Exception;
 
 use Test::DatabaseRow;
@@ -51,14 +51,14 @@ throws_ok { row_ok( table => "foo",
 throws_ok { row_ok( table => "foo",
                     where => [ fooid => 123 ] ,
                     tests => \"fish" ) }
-  qr/Can't understand the argument passed in 'tests'/, "bad tests";
+  qr/Can't understand the argument passed in 'tests': not a hashref or arrayref/, "bad tests";
 
 # odd tests
 throws_ok { row_ok( table => "foo",
                     where => [ fooid => 123 ] ,
                     tests => { foo => [ bar => "baz" ] } );
           }
-  qr/Can't understand the argument passed in 'tests'/, "bad tests 2";
+  qr/Can't understand the argument passed in 'tests': key 'foo' didn't contain a hashref/, "bad tests 2";
 
 throws_ok { row_ok( table => "foo",
 		    where => [ fooid => 123 ] ,
@@ -74,6 +74,10 @@ throws_ok { row_ok( sql   => "some sql",
 dies_ok { row_ok( dbh    => FakeDBI->new(fallover => 1, "hello" => "there"),
          	  sql    => "any old gumph",
 	          tests  => [ fooid => 1 ]) } "handles problems with sql";
+
+throws_ok { row_ok( db_results => [ { foo => "bar" } ],
+                    tests => { invalidop => { foo => 'bar' } } ) }
+  qr/Invalid operator test 'invalidop': \S+/, "invalid operator";
 
 ########################################################################
 # bad SQL

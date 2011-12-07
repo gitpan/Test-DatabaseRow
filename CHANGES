@@ -1,3 +1,14 @@
+2.02  Changed "label" to "diagnostic" (but kept backwards compatible
+      accepting of old object.)
+
+      Fix bug where an invalid comparison operator would cause test
+      failure rather than throwing an exception (bad input should
+      create exceptions, not fail tests)
+
+      Added better error messages when passing invalid tests in.
+
+      Improved commenting and flow control for better maintainability.
+
 2.01  Add tests that use DBD::SQLite to test a real database
 
       Fix the bugs with the DBI interface (thanks to ilmari for pointing
@@ -11,6 +22,13 @@
       returned
 
       improved test coverage.
+
+      Fix for bug where 
+         tests => [ "time" => "2011-11-11 11:32:26" ]
+      would have been interpreted as 
+         tests => { '==' => { "time" => "2011-11-11 11:32:26" } }
+      not
+         tests => { 'eq' => { "time" => "2011-11-11 11:32:26" } } 
 
 1.05  fix for 5.13.6+ new regualar expression stringification breaking our own
       test suite

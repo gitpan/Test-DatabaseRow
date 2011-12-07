@@ -12,13 +12,13 @@ use base qw(Exporter);
 our @EXPORT;
 
 use Carp qw(croak);
-our @CARP_OK = qw(Test::DatbaseRow TestDatabaseRow::Object);
+our @CARP_OK = qw(Test::DatabaseRow TestDatabaseRow::Object);
 
 # set the version number
-our $VERSION = "2.01";
+our $VERSION = "2.02";
 
 use Test::DatabaseRow::Object;
-our $class = "Test::DatabaseRow::Object";
+our $object_class = "Test::DatabaseRow::Object";
 
 sub row_ok {
 
@@ -44,16 +44,20 @@ sub row_ok {
   $args{sql_and_bind} = $args{sql}
     if exists $args{sql} && !exists $args{sql_and_bind};
 
-  # remove label
-  my $label = delete $args{label};
-  $label = "simple db test" unless defined $label;
+  # remove description, provide default fallback from label
+  my $label       = delete $args{label};
+  my $description = delete $args{description};
+  $description = $label unless defined $description;
+  $description = "simple db test" unless defined $description;
 
   # do the test
-  my $tbr = $class->new(%args);
+  my $tbr = $object_class->new(%args);
   my $tbr_result = $tbr->test_ok();
 
-  # store the results of the database operation if needed
-  # this is another example of functionality that is difficult
+  # store the results of the database operation in a var passed
+  # into this function.
+  # 
+  # This is another example of functionality that is difficult
   # to add to a procedural interface and would have been easier
   # if I'd used an OO interface.  That's the problem with
   # published APIs though, isn't it?  It's hard to change them
@@ -76,7 +80,7 @@ sub row_ok {
 
   # render the result with Test::Builder
   local $Test::Builder::Level = $Test::Builder::Level + 1;
-  return $tbr_result->pass_to_test_builder( $label );
+  return $tbr_result->pass_to_test_builder( $description );
 }
 push @EXPORT, qw(row_ok);
 
@@ -114,7 +118,7 @@ Test::DatabaseRow - simple database tests
   all_row_ok(
     sql   => "SELECT * FROM contacts WHERE cid = '123'",
     tests => [ name => "trelane" ],
-    label => "contact 123's name is trelane"
+    description => "contact 123's name is trelane"
   );
 
   # test with shortcuts
@@ -122,7 +126,7 @@ Test::DatabaseRow - simple database tests
     table => "contacts",
     where => [ cid => 123 ],
     tests => [ name => "trelane" ],
-    label => "contact 123's name is trelane"
+    description => "contact 123's name is trelane"
   );
 
   # complex test
@@ -134,7 +138,7 @@ Test::DatabaseRow - simple database tests
                            num    => 134                  },
                'eq'   => { person => "Mark Fowler"        },
                '=~'   => { road   => qr/Liverpool R.?.?d/ },},
-    label => "trelane entered into contacts okay" );
+    description => "trelane entered into contacts okay" );
   );
 
 =head1 DESCRIPTION
@@ -340,6 +344,24 @@ hashref...
 
   ok(Email::Valid->address($row->{'email'}));
 
+=item description
+
+The description that this test will use with C<Test::Builder>,
+i.e the thing that will be printed out after ok/not ok.
+For example:
+
+  row_ok(
+    sql => "SELECT * FROM queue",
+    description => "something in the queue"
+  );
+
+Hopefully produces something like:
+
+  ok 1 - something in the queue
+
+For historical reasons you may also pass C<label> for this
+parameter.
+
 =back
 
 =head2 Checking the number of results
@@ -380,6 +402,7 @@ statement is executed.
 =head2 Convenience Functions  
 
 This module also exports a few convenience functions that make
+using certain features of C<row_ok> more straight forward.
 
 =over
 
@@ -458,7 +481,7 @@ complex select statements that can easily be 'tied in' to C<row_ok>:
                                    road => { 'like' => "Liverpool%" },
                                  })],
          tests => [ email => 'mark@twoshortplanks.com' ],
-         label => "check mark's email address");
+         description => "check mark's email address");
 
 =head2 utf8 hacks
 
@@ -552,7 +575,7 @@ RT system:
 L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Test-DatabaseRow>
 
 Alternatively, you can simply fork this project on github and
-send me pull requests.  Please see <http://github.com/2shortplanks/Test-DatabaseRow>
+send me pull requests.  Please see L<http://github.com/2shortplanks/Test-DatabaseRow>
 
 =head1 AUTHOR
 
