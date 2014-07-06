@@ -15,7 +15,7 @@ use Carp qw(croak);
 our @CARP_OK = qw(Test::DatabaseRow TestDatabaseRow::Object);
 
 # set the version number
-our $VERSION = "2.03";
+our $VERSION = "2.04";
 
 use Test::DatabaseRow::Object;
 our $object_class = "Test::DatabaseRow::Object";
@@ -30,12 +30,14 @@ sub row_ok {
   our $dbh;
   our $force_utf8;
   our $verbose;
+  our $verbose_data;
 
   # defaults
   my %args = (
     dbh => $dbh,
     force_utf8 => $force_utf8,
     verbose => $verbose || $ENV{TEST_DBROW_VERBOSE},
+    verbose_data => $verbose_data || $ENV{TEST_DBROW_VERBOSE_DATA},
     check_all_rows => 0,
   @_ );
 
@@ -307,8 +309,16 @@ against all rows returned from the database not just the first.
 
 Setting this option to a true value will cause verbose diagnostics to
 be printed out during any failing tests.  You may also enable this
-feature by setting either C<$Test::DatabaseRow::verbose> variable the
+feature by setting either C<$Test::DatabaseRow::verbose> variable or the
 C<TEST_DBROW_VERBOSE> environmental variable to a true value.
+
+=item verbose_data
+
+Setting this option to a true value will cause the results of running
+the SQL queries to be printed out during any failing tests.  You may
+also enable this feature by setting either
+C<$Test::DatabaseRow::verbose_data> variable or the
+C<TEST_DBROW_VERBOSE_DATA> environmental variable to a true value.
 
 =item store_rows
 
